@@ -1,246 +1,443 @@
-/* Onejra Publications — static GitHub Pages reader */
+const ONEJRA_CONFIG = {
+  owner: "Onejra-net",
+  repo: "publications",
+  branch: "main",
+  directory: "acticles",
+  profileUrl: "https://github.com/Onejra-net",
+  wordsPerMinute: 200
+};
+
 (() => {
   "use strict";
 
-  // The folder name below follows the path supplied in the request: acticles.
-  const OWNER = "Onejra-net";
-  const REPO = "publications";
-  const BRANCH = "main";
-  const FOLDER = "acticles";
-  const API_URL = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER}?ref=${BRANCH}`;
-  const REPO_URL = `https://github.com/${OWNER}/${REPO}`;
-  const RAW_BASE = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${FOLDER}/`;
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
-  const listEl = document.getElementById("publication-list");
-  const searchEl = document.getElementById("search-input");
-  const countEl = document.getElementById("results-count");
-  const errorEl = document.getElementById("list-error");
-  const sortButton = document.getElementById("sort-button");
-  const emptyEl = document.getElementById("reader-empty");
-  const articleView = document.getElementById("article-view");
-  const articleTitle = document.getElementById("article-title");
-  const articleCategory = document.getElementById("article-category");
-  const articleDate = document.getElementById("article-date");
-  const articleContent = document.getElementById("article-content");
-  const sourceLink = document.getElementById("source-link");
-  const rawLink = document.getElementById("raw-link");
+  const icons = {
+    all: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+    writing: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 20 9-9-8-8H5L3 11z"/><path d="M7.5 7.5h.01"/></svg>',
+    code: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 8-5 4 5 4m8-8 5 4-5 4m-3-13-2 18"/></svg>',
+    ideas: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6m-5 4h4m-2-20a7 7 0 0 0-4 12.7c.6.4 1 1.1 1 1.8h6c0-.7.4-1.4 1-1.8A7 7 0 0 0 12 2z"/></svg>',
+    other: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg>',
+    arrow: '<svg class="item-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>'
+  };
 
-  const repositoryLink = document.getElementById("repository-link");
-  if (repositoryLink) {
-  repositoryLink.href = REPO_URL;
+  const state = {
+    publications: [],
+    selectedCategory: "all",
+    query: "",
+    sortNewestFirst: true,
+    activeId: null,
+    loaded: false
+  };
+
+  function normalize(value) {
+    return String(value || "").trim().toLocaleLowerCase();
   }
 
-  let publications = [];
-  let selectedPath = null;
-  let newestFirst = true;
-
-  const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, c => ({
-    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
-  })[c]);
-
-  function filenameTitle(name) {
-    return name.replace(/\.md$/i, "")
-      .replace(/^\d{4}[-_]\d{2,}[-_]?\s*/, "")
-      .replace(/^\d{4}[-_]\d{2}[-_]\d{2}[-_]?/, "")
-      .replace(/[-_]+/g, " ")
-      .replace(/\b\w/g, c => c.toUpperCase());
+  function categoryKey(category) {
+    const key = normalize(category);
+    if (["writing", "article", "articles", "essay", "essays"].includes(key)) return "writing";
+    if (["code", "tech", "technology", "development", "programming"].includes(key)) return "code";
+    if (["ideas", "thoughts", "notes", "philosophy"].includes(key)) return "ideas";
+    return key || "other";
   }
 
-  function parseMetadata(markdown, fileName) {
-    const lines = markdown.split(/\r?\n/);
-    let title = filenameTitle(fileName);
-    let description = "";
-    let date = "";
-    let category = "Publication";
-    let body = markdown;
-
-    // Basic YAML front matter support, e.g. title/date/category/description.
-    if (lines[0]?.trim() === "---") {
-      const end = lines.findIndex((line, i) => i > 0 && line.trim() === "---");
-      if (end > 0) {
-        for (const line of lines.slice(1, end)) {
-          const match = line.match(/^([A-Za-z_-]+)\s*:\s*(.*?)\s*$/);
-          if (!match) continue;
-          const key = match[1].toLowerCase();
-          const value = match[2].replace(/^["']|["']$/g, "");
-          if (key === "title") title = value;
-          if (key === "description" || key === "summary" || key === "abstract") description = value;
-          if (key === "date" || key === "published") date = value;
-          if (key === "category" || key === "type") category = value;
-        }
-        body = lines.slice(end + 1).join("\n");
-      }
-    }
-
-    const firstHeading = body.match(/^\s*#\s+(.+?)\s*$/m);
-    if (!title || title === filenameTitle(fileName)) {
-      if (firstHeading) title = firstHeading[1].replace(/[*_`]/g, "");
-    }
-    if (!description) {
-      description = body.replace(/```[\s\S]*?```/g, " ")
-        .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
-        .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
-        .replace(/[#>*_`~|-]/g, " ")
-        .replace(/\s+/g, " ").trim().slice(0, 165);
-    }
-    return { title, description, date, category, body };
+  function iconFor(category) {
+    return icons[categoryKey(category)] || icons.other;
   }
 
-  function dateLabel(value, fallback) {
-    const date = value ? new Date(value) : null;
-    if (date && !Number.isNaN(date.getTime())) {
-      return new Intl.DateTimeFormat("en", {year:"numeric", month:"short", day:"numeric"}).format(date);
-    }
-    const match = fallback.match(/(20\d{2})[-_](\d{2})[-_](\d{2})/);
-    return match ? new Intl.DateTimeFormat("en", {year:"numeric",month:"short",day:"numeric"}).format(new Date(`${match[1]}-${match[2]}-${match[3]}T12:00:00Z`)) : "DATE NOT SPECIFIED";
+  function safeDate(date) {
+    if (!date) return null;
+    const parsed = new Date(date);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
-  function sortItems(items) {
-    return [...items].sort((a, b) => {
-      const da = a.date ? new Date(a.date).getTime() : 0;
-      const db = b.date ? new Date(b.date).getTime() : 0;
-      const diff = da - db;
-      return newestFirst ? (diff || a.name.localeCompare(b.name)) * -1 : (diff || a.name.localeCompare(b.name));
+  function formatDate(date) {
+    const parsed = safeDate(date);
+    if (!parsed) return "Undated";
+    return new Intl.DateTimeFormat("en", {
+      month: "short", day: "2-digit", year: "numeric", timeZone: "UTC"
+    }).format(parsed);
+  }
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[char]));
+  }
+
+  function parseMarkdownFile(raw, file) {
+    let body = raw;
+    const meta = {};
+    const frontmatter = raw.match(/^---\s*\r?\n([\s\S]*?)\r?\n---\s*(?:\r?\n|$)/);
+
+    if (frontmatter) {
+      frontmatter[1].split(/\r?\n/).forEach((line) => {
+        const match = line.match(/^([A-Za-z0-9_-]+)\s*:\s*(.*?)\s*$/);
+        if (match) meta[match[1].toLowerCase()] = match[2].replace(/^["']|["']$/g, "");
+      });
+      body = raw.slice(frontmatter[0].length);
+    }
+
+    const firstHeading = body.match(/^#\s+(.+)$/m);
+    const title = meta.title || (firstHeading ? firstHeading[1].trim() : file.name.replace(/\.md$/i, "").replace(/[-_]/g, " "));
+    const excerpt = meta.description || body
+      .replace(/```[\s\S]*?```/g, " ")
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+      .replace(/^#{1,6}\s+/gm, "")
+      .replace(/[*_>`#~-]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 155);
+
+    const date = meta.date || meta.published || file.date || "";
+    const category = meta.category || meta.type || inferCategory(file.path || file.name);
+    return {
+      id: file.path || file.name,
+      title,
+      category,
+      date,
+      excerpt: excerpt + (excerpt.length >= 155 ? "…" : ""),
+      markdown: body,
+      sourceUrl: file.html_url || "",
+      rawUrl: file.download_url || "",
+      path: file.path || file.name
+    };
+  }
+
+  function inferCategory(path) {
+    const parts = String(path || "").split("/");
+    if (parts.length > 1) {
+      const folder = normalize(parts[parts.length - 2]);
+      if (folder) return folder.charAt(0).toUpperCase() + folder.slice(1);
+    }
+    const name = normalize(path);
+    if (/\b(code|dev|programming|javascript|python|tech)\b/.test(name)) return "Code";
+    if (/\b(idea|thought|philosophy|note)\b/.test(name)) return "Ideas";
+    return "Writing";
+  }
+
+  function setError(message) {
+    const error = $("#list-error");
+    if (!error) return;
+    error.hidden = false;
+    error.textContent = message;
+  }
+
+  function clearError() {
+    const error = $("#list-error");
+    if (error) {
+      error.hidden = true;
+      error.textContent = "";
+    }
+  }
+
+  async function fetchPublications() {
+    const { owner, repo, branch, directory } = ONEJRA_CONFIG;
+    if (!owner || !repo || owner.startsWith("YOUR_") || repo.startsWith("YOUR_")) {
+      throw new Error("Set ONEJRA_CONFIG.owner and ONEJRA_CONFIG.repo in assets/app.js before loading the archive.");
+    }
+
+    const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${directory.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(branch)}`;
+    const response = await fetch(apiUrl, {
+      headers: { Accept: "application/vnd.github+json" }
+    });
+    if (!response.ok) {
+      if (response.status === 404) throw new Error("Repository or publications directory not found. Check owner, repo, branch and directory settings.");
+      if (response.status === 403) throw new Error("GitHub API rate limit reached or repository access is restricted. Try again later.");
+      throw new Error(`GitHub returned ${response.status}. Check your repository settings.`);
+    }
+
+    const files = await response.json();
+    if (!Array.isArray(files)) throw new Error("Expected a folder of Markdown files in the configured GitHub directory.");
+
+    const markdownFiles = files.filter((file) =>
+      file.type === "file" && /\.md$/i.test(file.name)
+    );
+
+    const loaded = await Promise.all(markdownFiles.map(async (file) => {
+      const rawResponse = await fetch(file.download_url);
+      if (!rawResponse.ok) return null;
+      const raw = await rawResponse.text();
+      return parseMarkdownFile(raw, file);
+    }));
+
+    return loaded.filter(Boolean).sort((a, b) => {
+      const da = safeDate(a.date)?.getTime() || 0;
+      const db = safeDate(b.date)?.getTime() || 0;
+      return db - da;
+    });
+  }
+
+  function renderFilters() {
+    const container = $("#category-filters");
+    if (!container) return;
+
+    const counts = new Map();
+    state.publications.forEach((publication) => {
+      const label = publication.category || "Other";
+      const key = categoryKey(label);
+      if (!counts.has(key)) counts.set(key, { key, label, count: 0 });
+      counts.get(key).count++;
+    });
+
+    const categories = [...counts.values()].sort((a, b) => a.label.localeCompare(b.label));
+    const all = [{ key: "all", label: "All", count: state.publications.length }, ...categories];
+
+    container.replaceChildren();
+    all.forEach(({ key, label, count }) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "category-filter" + (state.selectedCategory === key ? " active" : "");
+      button.dataset.category = key;
+      button.setAttribute("aria-pressed", String(state.selectedCategory === key));
+      button.innerHTML = `${iconFor(key)}<span>${escapeHTML(label)}</span><b class="filter-count">${count}</b>`;
+      button.addEventListener("click", () => {
+        state.selectedCategory = key;
+        renderFilters();
+        renderList();
+      });
+      container.append(button);
+    });
+
+    $("#stat-publications").textContent = String(state.publications.length);
+    $("#stat-categories").textContent = String(categories.length);
+    const years = state.publications.map((p) => safeDate(p.date)?.getUTCFullYear()).filter(Boolean);
+    $("#stat-years").textContent = years.length ? `${Math.min(...years)}–${Math.max(...years)}` : "—";
+  }
+
+  function visiblePublications() {
+    const query = normalize(state.query);
+    return state.publications.filter((publication) => {
+      const categoryMatches = state.selectedCategory === "all" ||
+        categoryKey(publication.category) === state.selectedCategory;
+      const haystack = normalize(`${publication.title} ${publication.category} ${publication.excerpt} ${publication.markdown}`);
+      return categoryMatches && (!query || haystack.includes(query));
+    }).sort((a, b) => {
+      const da = safeDate(a.date)?.getTime() || 0;
+      const db = safeDate(b.date)?.getTime() || 0;
+      return state.sortNewestFirst ? db - da : da - db;
     });
   }
 
   function renderList() {
-    const query = searchEl.value.trim().toLowerCase();
-    const filtered = sortItems(publications.filter(p =>
-      `${p.title} ${p.description} ${p.category} ${p.name}`.toLowerCase().includes(query)
-    ));
-    countEl.textContent = `${filtered.length} publication${filtered.length === 1 ? "" : "s"}`;
-    listEl.innerHTML = "";
-    if (!filtered.length) {
-      listEl.innerHTML = '<div class="empty-list">No publications match your search.</div>';
+    const list = $("#publication-list");
+    if (!list) return;
+    const visible = visiblePublications();
+    list.replaceChildren();
+    list.setAttribute("aria-busy", "false");
+
+    $("#results-count").textContent = `${visible.length} ${visible.length === 1 ? "publication" : "publications"}`;
+
+    if (!visible.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty-list";
+      empty.textContent = state.publications.length ? "No matching publications." : "No Markdown publications found.";
+      list.append(empty);
       return;
     }
-    for (const item of filtered) {
+
+    visible.forEach((publication) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `publication-item${selectedPath === item.path ? " active" : ""}`;
-      button.setAttribute("aria-pressed", selectedPath === item.path ? "true" : "false");
+      button.className = "publication-item" + (state.activeId === publication.id ? " active" : "");
+      button.dataset.id = publication.id;
+      button.dataset.category = categoryKey(publication.category);
+      button.setAttribute("aria-current", state.activeId === publication.id ? "true" : "false");
       button.innerHTML = `
-        <div class="item-top"><span class="item-category">${escapeHTML(item.category)}</span><span class="item-date">${escapeHTML(dateLabel(item.date, item.name))}</span></div>
-        <h3>${escapeHTML(item.title)}</h3>
-        <p>${escapeHTML(item.description || "Open this publication to read the full text.")}</p>`;
-      button.addEventListener("click", () => openPublication(item));
-      listEl.appendChild(button);
-    }
+        <span class="item-icon" data-tone="${escapeHTML(categoryKey(publication.category))}">${iconFor(publication.category)}</span>
+        <span class="item-main">
+          <span class="item-top">
+            <span class="item-category">${escapeHTML(publication.category || "Other")}</span>
+            <time class="item-date">${escapeHTML(formatDate(publication.date))}</time>
+          </span>
+          <h3>${escapeHTML(publication.title)}</h3>
+          <p>${escapeHTML(publication.excerpt || "Open publication to read more.")}</p>
+        </span>
+        ${icons.arrow}`;
+      button.addEventListener("click", () => openPublication(publication.id));
+      list.append(button);
+    });
   }
 
-  async function openPublication(item) {
-	selectedPath = item.path;
-	renderList();
-
-	emptyEl.style.display = "none";
-	articleView.hidden = false;
-    articleTitle.textContent = item.title;
-    articleCategory.textContent = String(item.category || "PUBLICATION").toUpperCase();
-    articleDate.textContent = dateLabel(item.date, item.name).toUpperCase();
-    articleContent.innerHTML = '<div class="loading-state"><span class="loader"></span><span>Loading publication text…</span></div>';
-    sourceLink.href = item.html_url;
-    rawLink.href = item.download_url || `${RAW_BASE}${encodeURIComponent(item.name)}`;
-    history.replaceState(null, "", `#${encodeURIComponent(item.name)}`);
-
-    try {
-      const response = await fetch(item.download_url || `${RAW_BASE}${encodeURIComponent(item.name)}`);
-      if (!response.ok) throw new Error(`GitHub returned ${response.status}`);
-      const markdown = await response.text();
-      const meta = parseMetadata(markdown, item.name);
-      articleTitle.textContent = meta.title;
-      articleCategory.textContent = String(meta.category || "PUBLICATION").toUpperCase();
-      articleDate.textContent = dateLabel(meta.date || item.date, item.name).toUpperCase();
-      if (window.marked) {
-        marked.setOptions({ breaks: false, gfm: true });
-        articleContent.innerHTML = marked.parse(meta.body);
-		
-        // Open external links safely in a new tab:
-        articleContent.querySelectorAll("a").forEach(a => {
-          if (/^https?:/i.test(a.href)) { a.target = "_blank"; a.rel = "noopener noreferrer"; }
-        });
-      } else {
-        articleContent.textContent = meta.body;
-      }
-      document.title = `${meta.title} — Onejra Publications`;
-    } catch (error) {
-      articleContent.innerHTML = `<p>Could not load this publication. Please try again or open the original Markdown file on GitHub.</p><p class="error-detail">${escapeHTML(error.message)}</p>`;
-    }
-    if (window.matchMedia("(max-width: 650px)").matches) {
-      document.getElementById("reader").scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+  function showToast(message) {
+    const toast = $("#toast");
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add("show");
+    window.clearTimeout(showToast.timer);
+    showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2200);
   }
 
-  async function loadPublications() {
-    try {
-      const response = await fetch(API_URL, { headers: { Accept: "application/vnd.github+json" } });
-      if (!response.ok) {
-        if (response.status === 404) throw new Error(`Folder not found: ${FOLDER}. Check the folder spelling and repository visibility.`);
-        if (response.status === 403) throw new Error("GitHub API rate limit reached. Wait a little and reload the page.");
-        throw new Error(`GitHub API returned ${response.status}.`);
-      }
-      const data = await response.json();
-      publications = data
-        .filter(item => item.type === "file" && /\.md$/i.test(item.name))
-        .map(item => ({
-          name: item.name,
-          path: item.path,
-          html_url: item.html_url,
-          download_url: item.download_url,
-          title: filenameTitle(item.name),
-          description: "",
-          date: "",
-          category: "Publication"
-        }));
-
-      if (!publications.length) {
-        listEl.innerHTML = '<div class="empty-list">No .md files were found in this folder.</div>';
-        countEl.textContent = "0 publications";
-        return;
-      }
-
-      // Fetch metadata for each Markdown file so title/summary/date can be shown in the list:
-      await Promise.all(publications.map(async item => {
-        try {
-          const r = await fetch(item.download_url);
-          if (!r.ok) return;
-          const meta = parseMetadata(await r.text(), item.name);
-          item.title = meta.title;
-          item.description = meta.description;
-          item.date = meta.date;
-          item.category = meta.category;
-        } catch (_) { /* Use filename-based fallback metadata. */ }
-      }));
-
-      renderList();
-      const hashName = decodeURIComponent(location.hash.slice(1));
-      const initial = publications.find(p => p.name === hashName) || sortItems(publications)[0];
-      if (initial) openPublication(initial);
-    } catch (error) {
-      listEl.innerHTML = '<div class="empty-list">The archive could not be loaded.</div>';
-      countEl.textContent = "Archive unavailable";
-      errorEl.hidden = false;
-      errorEl.textContent = `${error.message} The repository and Markdown files must be public for this no-backend setup.`;
-    }
+  function updateReadingTime() {
+    const content = $("#article-content");
+    const output = $("#reading-time");
+    if (!content || !output) return;
+    const words = (content.innerText || content.textContent || "").trim().match(/\S+/g)?.length || 0;
+    const minutes = Math.max(1, Math.ceil(words / ONEJRA_CONFIG.wordsPerMinute));
+    output.textContent = `~${minutes} min read`;
   }
 
-  searchEl.addEventListener("input", renderList);
-  sortButton.addEventListener("click", () => {
-    newestFirst = !newestFirst;
-    sortButton.innerHTML = `${newestFirst ? "Newest first" : "Oldest first"} <span>⌄</span>`;
+  function updateToc() {
+    const content = $("#article-content");
+    const panel = $("#article-toc");
+    const nav = $("#toc-links");
+    if (!content || !panel || !nav) return;
+    nav.replaceChildren();
+
+    const headings = $$("h1, h2, h3", content);
+    const used = new Set();
+    headings.forEach((heading, index) => {
+      const label = heading.textContent.trim();
+      if (!label) return;
+      const base = label.toLowerCase().normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `section-${index + 1}`;
+      let id = base;
+      let suffix = 2;
+      while (used.has(id)) id = `${base}-${suffix++}`;
+      used.add(id);
+      heading.id = id;
+
+      const link = document.createElement("a");
+      link.href = `#${id}`;
+      link.textContent = label;
+      link.className = `toc-level-${heading.tagName.slice(1)}`;
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        heading.scrollIntoView({ behavior: "smooth", block: "start" });
+        history.replaceState(null, "", `#${encodeURIComponent(id)}`);
+      });
+      nav.append(link);
+    });
+    panel.hidden = nav.children.length === 0;
+  }
+
+  function renderMarkdown(markdown) {
+    const target = $("#article-content");
+    if (!target) return;
+    if (window.marked && typeof window.marked.parse === "function") {
+      target.innerHTML = window.marked.parse(markdown, { gfm: true, breaks: false });
+    } else {
+      target.textContent = markdown;
+    }
+    updateReadingTime();
+    updateToc();
+  }
+
+  function openPublication(id) {
+    const publication = state.publications.find((item) => item.id === id);
+    if (!publication) return;
+    state.activeId = id;
+
+    
+	const emptyState = $("#reader-empty");
+	const articleView = $("#article-view");
+
+	if (emptyState) {
+	  emptyState.hidden = true;
+	  emptyState.style.setProperty("display", "none", "important");
+	}
+
+	if (articleView) {
+	  articleView.hidden = false;
+	  articleView.style.removeProperty("display");
+	  articleView.classList.add("is-visible");
+	}
+    $("#article-title").textContent = publication.title;
+    $("#article-category").textContent = String(publication.category || "Publication").toUpperCase();
+    $("#article-date").textContent = formatDate(publication.date);
+
+    const iconBox = $("#article-category-icon");
+    if (iconBox) iconBox.innerHTML = iconFor(publication.category);
+
+    $("#source-link").href = publication.sourceUrl || `https://github.com/${ONEJRA_CONFIG.owner}/${ONEJRA_CONFIG.repo}/blob/${ONEJRA_CONFIG.branch}/${publication.path}`;
+    $("#raw-link").href = publication.rawUrl || `https://raw.githubusercontent.com/${ONEJRA_CONFIG.owner}/${ONEJRA_CONFIG.repo}/${ONEJRA_CONFIG.branch}/${publication.path}`;
+
+    renderMarkdown(publication.markdown);
     renderList();
-  });
-  document.addEventListener("keydown", event => {
-    if (event.key === "/" && !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) {
-      event.preventDefault();
-      searchEl.focus();
-    }
-    if (event.key === "Escape" && document.activeElement === searchEl) {
-      searchEl.value = "";
-      renderList();
-      searchEl.blur();
-    }
-  });
 
-  loadPublications();
+    if (window.matchMedia("(max-width: 720px)").matches) {
+      $("#reader").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  async function copyArticleLink() {
+    const publication = state.publications.find((item) => item.id === state.activeId);
+    if (!publication) return;
+    const url = new URL(window.location.href);
+    url.hash = `publication=${encodeURIComponent(publication.id)}`;
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      showToast("Article link copied");
+    } catch {
+      showToast("Clipboard access is unavailable in this browser");
+    }
+  }
+
+  function setupEvents() {
+    $("#search-input")?.addEventListener("input", (event) => {
+      state.query = event.target.value;
+      renderList();
+    });
+
+    $("#sort-button")?.addEventListener("click", () => {
+      state.sortNewestFirst = !state.sortNewestFirst;
+      $("#sort-label").textContent = state.sortNewestFirst ? "Newest" : "Oldest";
+      renderList();
+    });
+
+    $("#copy-link-button")?.addEventListener("click", copyArticleLink);
+
+    $("#back-to-archive")?.addEventListener("click", () => {
+      $("#archive").scrollIntoView({ behavior: "smooth", block: "start" });
+      $("#search-input")?.focus({ preventScroll: true });
+    });
+
+    $("#github-profile-link")?.setAttribute("href", ONEJRA_CONFIG.profileUrl);
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target.isContentEditable) return;
+      event.preventDefault();
+      $("#search-input")?.focus();
+    });
+
+    window.addEventListener("hashchange", () => {
+      const match = window.location.hash.match(/^#publication=(.*)$/);
+      if (match) openPublication(decodeURIComponent(match[1]));
+    });
+  }
+
+  async function init() {
+    setupEvents();
+    try {
+      state.publications = await fetchPublications();
+      state.loaded = true;
+      clearError();
+      renderFilters();
+      renderList();
+
+      const match = window.location.hash.match(/^#publication=(.*)$/);
+      if (match) {
+        const id = decodeURIComponent(match[1]);
+        if (state.publications.some((p) => p.id === id)) openPublication(id);
+      }
+    } catch (error) {
+      console.error("Onejra archive:", error);
+      setError(error.message || "Could not load the publication archive.");
+      const list = $("#publication-list");
+      list?.setAttribute("aria-busy", "false");
+      if (list) list.innerHTML = '<div class="empty-list">Archive unavailable. Check the configuration in <code>assets/app.js</code>.</div>';
+      $("#results-count").textContent = "Archive unavailable";
+      $("#stat-publications").textContent = "—";
+      $("#stat-categories").textContent = "—";
+      $("#stat-years").textContent = "—";
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
 })();
