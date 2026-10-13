@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070b14">
+  <meta name="description" content="Published works by Onejra.">
+  <title>Published works — Onejra</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script defer src="assets/app.js"></script>
+</head>
+<body>
+  <main class="archive-shell">
+    <aside class="publication-panel" aria-label="Publication archive">
+      <div class="section-heading">
+        <p class="eyebrow">THE ARCHIVE</p>
+        <h1>Published <em>works</em></h1>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input id="search-input" type="search" placeholder="Search publications..." aria-label="Search publications">
+        <kbd>/</kbd>
+      </div>
+      <div class="list-toolbar">
+        <span id="results-count">Loading archive…</span>
+        <button id="sort-button" class="sort-button" type="button">Newest first <span>⌄</span></button>
+      </div>
+      <div id="publication-list" class="publication-list" aria-live="polite">
+        <div class="loading-state"><span class="loader"></span><span>Loading publications from GitHub…</span></div>
+      </div>
+      <div id="list-error" class="list-error" hidden></div>
+    </aside>
+
+    <article class="reader" id="reader">
+      <div class="reader-empty" id="reader-empty">
+        <div class="empty-symbol">↳</div>
+        <p class="eyebrow">SELECT A PUBLICATION</p>
+        <h2>Ideas deserve<br><em>room to unfold.</em></h2>
+      </div>
+      <div id="article-view" hidden>
+        <div class="article-actions">
+          <a id="source-link" class="button outline" href="#" target="_blank" rel="noopener">Source on GitHub ↗</a>
+          <a id="raw-link" class="text-link" href="#" target="_blank" rel="noopener">Raw Markdown ↓</a>
+        </div>
+        <div class="article-heading">
+          <p class="eyebrow" id="article-category">PUBLICATION</p>
+          <h2 id="article-title">Publication title</h2>
+          <div class="article-meta"><span id="article-date">DATE</span></div>
+        </div>
+        <div id="article-content" class="prose"></div>
+      </div>
+    </article>
+  </main>
+</body>
+</html>
