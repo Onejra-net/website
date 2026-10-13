@@ -28,7 +28,6 @@ html {
   min-width: 0;
   height: 100%;
   min-height: 0;
-  background: transparent !important;
   scrollbar-width: none;
 }
 
@@ -38,11 +37,10 @@ body {
   min-width: 0;
   min-height: 0;
   margin: 0;
-  background-color: #070b14;
   color: var(--text);
+  background-color: #070b14;
   font: 14px/1.65 "DM Sans", sans-serif;
   -webkit-font-smoothing: antialiased;
-  background: transparent !important;
   scrollbar-width: none;
 }
 
