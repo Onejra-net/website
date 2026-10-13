@@ -1,59 +1,317 @@
+
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#070b14">
-  <meta name="description" content="Published works by Onejra.">
+  <meta
+    name="description"
+    content="Published works, articles, notes and experiments by Onejra."
+  >
+
   <title>Published works — Onejra</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
   <link rel="stylesheet" href="assets/styles.css">
+
   <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script defer src="assets/app.js"></script>
 </head>
+
 <body>
   <main class="archive-shell">
-    <aside class="publication-panel" aria-label="Publication archive">
+
+    <!-- PUBLICATION ARCHIVE -->
+    <aside
+      class="publication-panel"
+      aria-label="Publication archive"
+    >
+
       <div class="section-heading">
         <p class="eyebrow">THE ARCHIVE</p>
-        <h1>Published <em>works</em></h1>
+
+        <h1>
+          Published <em>works</em>
+        </h1>
+
+        <p class="archive-description">
+          A collection of notes, articles and experiments —
+          from ideas to finished pieces.
+        </p>
       </div>
+
+      <!-- SEARCH -->
       <div class="search-wrap">
         <span class="search-icon" aria-hidden="true">⌕</span>
-        <input id="search-input" type="search" placeholder="Search publications..." aria-label="Search publications">
-        <kbd>/</kbd>
+
+        <input
+          id="search-input"
+          type="search"
+          placeholder="Search publications..."
+          aria-label="Search publications"
+          autocomplete="off"
+        >
+
+        <kbd aria-hidden="true">/</kbd>
       </div>
+
+      <!-- CATEGORY FILTERS -->
+      <div
+        class="category-filters"
+        id="category-filters"
+        aria-label="Filter publications by category"
+      >
+        <button
+          class="category-filter active"
+          type="button"
+          data-category="all"
+          aria-pressed="true"
+        >
+          <span>All</span>
+          <span class="filter-count">0</span>
+        </button>
+      </div>
+
+      <!-- LIST TOOLBAR -->
       <div class="list-toolbar">
-        <span id="results-count">Loading archive…</span>
-        <button id="sort-button" class="sort-button" type="button">Newest first <span>⌄</span></button>
+        <span id="results-count" aria-live="polite">
+          Loading archive…
+        </span>
+
+        <button
+          id="sort-button"
+          class="sort-button"
+          type="button"
+          aria-label="Change publication sorting order"
+        >
+          Newest first <span aria-hidden="true">⌄</span>
+        </button>
       </div>
-      <div id="publication-list" class="publication-list" aria-live="polite">
-        <div class="loading-state"><span class="loader"></span><span>Loading publications from GitHub…</span></div>
+
+      <!-- PUBLICATION LIST -->
+      <div
+        id="publication-list"
+        class="publication-list"
+        aria-label="Publications"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <div class="loading-state">
+          <span class="loader" aria-hidden="true"></span>
+          <span>Loading publications from GitHub…</span>
+        </div>
       </div>
-      <div id="list-error" class="list-error" hidden></div>
+
+      <!-- LOADING / ERROR MESSAGE -->
+      <div
+        id="list-error"
+        class="list-error"
+        role="alert"
+        hidden
+      ></div>
+
+      <div class="archive-sidebar-footer">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>ARCHIVE INDEX</span>
+        <span class="archive-version">ONEJRA / 01</span>
+      </div>
+
     </aside>
 
+
+    <!-- ARTICLE READER -->
     <article class="reader" id="reader">
+
+      <!-- EMPTY STATE -->
       <div class="reader-empty" id="reader-empty">
-        <div class="empty-symbol">↳</div>
-        <p class="eyebrow">SELECT A PUBLICATION</p>
-        <h2>Ideas deserve<br><em>room to unfold.</em></h2>
+
+        <div class="empty-symbol" aria-hidden="true">
+          ↳
+        </div>
+
+        <p class="eyebrow">
+          SELECT A PUBLICATION
+        </p>
+
+        <h2>
+          Ideas deserve<br>
+          <em>room to unfold.</em>
+        </h2>
+
+        <p class="empty-description">
+          Explore the archive, discover new ideas and
+          spend some time with the things worth reading.
+        </p>
+
+        <div class="empty-hint">
+          <span class="empty-hint-line"></span>
+          <span>SELECT AN ENTRY TO BEGIN</span>
+        </div>
+
       </div>
+
+
+      <!-- ARTICLE CONTENT -->
       <div id="article-view" hidden>
+
+        <!-- ARTICLE ACTIONS -->
         <div class="article-actions">
-          <a id="source-link" class="button outline" href="#" target="_blank" rel="noopener">Source on GitHub ↗</a>
-          <a id="raw-link" class="text-link" href="#" target="_blank" rel="noopener">Raw Markdown ↓</a>
+
+          <a
+            id="source-link"
+            class="button outline"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Source on GitHub ↗
+          </a>
+
+          <a
+            id="raw-link"
+            class="text-link"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Raw Markdown ↓
+          </a>
+
         </div>
-        <div class="article-heading">
-          <p class="eyebrow" id="article-category">PUBLICATION</p>
-          <h2 id="article-title">Publication title</h2>
-          <div class="article-meta"><span id="article-date">DATE</span></div>
+
+
+        <!-- ARTICLE HEADER -->
+        <header class="article-heading">
+
+          <div class="article-heading-top">
+            <p
+              class="eyebrow"
+              id="article-category"
+            >
+              PUBLICATION
+            </p>
+
+            <span class="article-status">
+              <span class="status-dot" aria-hidden="true"></span>
+              PUBLISHED
+            </span>
+          </div>
+
+          <h2 id="article-title">
+            Publication title
+          </h2>
+
+          <div class="article-meta">
+
+            <span id="article-date">
+              DATE
+            </span>
+
+            <span class="meta-separator" aria-hidden="true">
+              /
+            </span>
+
+            <span id="reading-time">
+              Reading time
+            </span>
+
+          </div>
+
+        </header>
+
+
+        <!-- ARTICLE LAYOUT -->
+        <div class="article-layout">
+
+          <!-- AUTOMATIC TABLE OF CONTENTS -->
+          <aside
+            class="article-toc"
+            id="article-toc"
+            aria-label="Article navigation"
+            hidden
+          >
+
+            <p class="eyebrow">
+              ON THIS PAGE
+            </p>
+
+            <nav
+              id="toc-links"
+              aria-label="Table of contents"
+            >
+              <!-- Generated from Markdown headings by JavaScript -->
+            </nav>
+
+          </aside>
+
+
+          <!-- MARKDOWN RENDER TARGET -->
+          <div
+            id="article-content"
+            class="prose"
+            tabindex="-1"
+          >
+            <!-- Markdown content is inserted here by app.js -->
+          </div>
+
         </div>
-        <div id="article-content" class="prose"></div>
+
+
+        <!-- ARTICLE FOOTER -->
+        <footer class="article-footer">
+
+          <div class="article-license">
+
+            <div
+              class="cc-icons"
+              aria-label="Creative Commons"
+            >
+              <span aria-hidden="true">CC</span>
+              <span aria-hidden="true">BY</span>
+            </div>
+
+            <div>
+              <strong>OPEN KNOWLEDGE</strong>
+
+              <p>
+                Respect the original author and the license
+                specified by the publication.
+              </p>
+            </div>
+
+          </div>
+
+          <a
+            id="back-to-top"
+            class="text-link"
+            href="#reader"
+          >
+            Back to top ↑
+          </a>
+
+        </footer>
+
       </div>
+
     </article>
+
   </main>
+
+
+  <!-- KEYBOARD SHORTCUT HINT -->
+  <div class="keyboard-hint" aria-hidden="true">
+    <span>PRESS</span>
+    <kbd>/</kbd>
+    <span>TO SEARCH</span>
+  </div>
+
 </body>
 </html>
