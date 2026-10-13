@@ -1,317 +1,129 @@
-
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#070b14">
-  <meta
-    name="description"
-    content="Published works, articles, notes and experiments by Onejra."
-  >
-
+  <meta name="description" content="Published works, notes and experiments by Onejra.">
   <title>Published works — Onejra</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
-    rel="stylesheet"
-  >
-
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/styles.css">
-
-  <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script defer src="assets/app.js"></script>
 </head>
-
 <body>
-  <main class="archive-shell">
-
-    <!-- PUBLICATION ARCHIVE -->
-    <aside
-      class="publication-panel"
-      aria-label="Publication archive"
-    >
-
-      <div class="section-heading">
-        <p class="eyebrow">THE ARCHIVE</p>
-
-        <h1>
-          Published <em>works</em>
-        </h1>
-
-        <p class="archive-description">
-          A collection of notes, articles and experiments —
-          from ideas to finished pieces.
-        </p>
+<main class="page-shell">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-grid" aria-hidden="true"></div>
+      <div class="hero-orbit" aria-hidden="true"><span></span><i></i></div>
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="live-dot"></span> THE ARCHIVE</p>
+        <h1 id="page-title">Published <em>works</em></h1>
+        <p class="hero-description">A living collection of notes, articles and experiments.</p>
       </div>
-
-      <!-- SEARCH -->
-      <div class="search-wrap">
-        <span class="search-icon" aria-hidden="true">⌕</span>
-
-        <input
-          id="search-input"
-          type="search"
-          placeholder="Search publications..."
-          aria-label="Search publications"
-          autocomplete="off"
-        >
-
-        <kbd aria-hidden="true">/</kbd>
-      </div>
-
-      <!-- CATEGORY FILTERS -->
-      <div
-        class="category-filters"
-        id="category-filters"
-        aria-label="Filter publications by category"
-      >
-        <button
-          class="category-filter active"
-          type="button"
-          data-category="all"
-          aria-pressed="true"
-        >
-          <span>All</span>
-          <span class="filter-count">0</span>
-        </button>
-      </div>
-
-      <!-- LIST TOOLBAR -->
-      <div class="list-toolbar">
-        <span id="results-count" aria-live="polite">
-          Loading archive…
-        </span>
-
-        <button
-          id="sort-button"
-          class="sort-button"
-          type="button"
-          aria-label="Change publication sorting order"
-        >
-          Newest first <span aria-hidden="true">⌄</span>
-        </button>
-      </div>
-
-      <!-- PUBLICATION LIST -->
-      <div
-        id="publication-list"
-        class="publication-list"
-        aria-label="Publications"
-        aria-live="polite"
-        aria-busy="true"
-      >
-        <div class="loading-state">
-          <span class="loader" aria-hidden="true"></span>
-          <span>Loading publications from GitHub…</span>
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v6h5M10 14h6M10 17h6"/></svg></span>
+          <strong id="stat-publications">—</strong><small>PUBLICATIONS</small>
+        </div>
+        <div class="stat">
+          <span class="stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5 5 4h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m4 18 5-7h11"/></svg></span>
+          <strong id="stat-categories">—</strong><small>CATEGORIES</small>
+        </div>
+        <div class="stat">
+          <span class="stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h3"/></svg></span>
+          <strong id="stat-years">—</strong><small>ARCHIVE RANGE</small>
         </div>
       </div>
+    </section>
 
-      <!-- LOADING / ERROR MESSAGE -->
-      <div
-        id="list-error"
-        class="list-error"
-        role="alert"
-        hidden
-      ></div>
-
-      <div class="archive-sidebar-footer">
-        <span class="status-dot" aria-hidden="true"></span>
-        <span>ARCHIVE INDEX</span>
-        <span class="archive-version">ONEJRA / 01</span>
-      </div>
-
-    </aside>
-
-
-    <!-- ARTICLE READER -->
-    <article class="reader" id="reader">
-
-      <!-- EMPTY STATE -->
-      <div class="reader-empty" id="reader-empty">
-
-        <div class="empty-symbol" aria-hidden="true">
-          ↳
+    <section class="archive-layout" id="archive" aria-label="Publication archive">
+      <aside class="publication-panel">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg>
+          <input id="search-input" type="search" placeholder="Search publications..." aria-label="Search publications" autocomplete="off">
+          <kbd>/</kbd>
         </div>
 
-        <p class="eyebrow">
-          SELECT A PUBLICATION
-        </p>
-
-        <h2>
-          Ideas deserve<br>
-          <em>room to unfold.</em>
-        </h2>
-
-        <p class="empty-description">
-          Explore the archive, discover new ideas and
-          spend some time with the things worth reading.
-        </p>
-
-        <div class="empty-hint">
-          <span class="empty-hint-line"></span>
-          <span>SELECT AN ENTRY TO BEGIN</span>
+        <div class="category-filters" id="category-filters" aria-label="Filter by category">
+          <button class="category-filter active" type="button" data-category="all" aria-pressed="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <span>All</span><b class="filter-count">0</b>
+          </button>
         </div>
 
-      </div>
-
-
-      <!-- ARTICLE CONTENT -->
-      <div id="article-view" hidden>
-
-        <!-- ARTICLE ACTIONS -->
-        <div class="article-actions">
-
-          <a
-            id="source-link"
-            class="button outline"
-            href="#"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Source on GitHub ↗
-          </a>
-
-          <a
-            id="raw-link"
-            class="text-link"
-            href="#"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Raw Markdown ↓
-          </a>
-
+        <div class="list-toolbar">
+          <span id="results-count" aria-live="polite">Loading archive…</span>
+          <button id="sort-button" class="sort-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10m-7 6h4"/></svg>
+            <span id="sort-label">Newest</span>
+            <span class="sort-chevron">⌄</span>
+          </button>
         </div>
 
+        <div id="publication-list" class="publication-list" aria-live="polite" aria-busy="true">
+          <div class="loading-state"><span class="loader"></span><span>Connecting to archive…</span></div>
+        </div>
+        <div id="list-error" class="list-error" role="alert" hidden></div>
+        <div class="panel-foot"><span class="live-dot"></span><span>ARCHIVE INDEX</span><span class="panel-version">ONEJRA / 01</span></div>
+      </aside>
 
-        <!-- ARTICLE HEADER -->
-        <header class="article-heading">
-
-          <div class="article-heading-top">
-            <p
-              class="eyebrow"
-              id="article-category"
-            >
-              PUBLICATION
-            </p>
-
-            <span class="article-status">
-              <span class="status-dot" aria-hidden="true"></span>
-              PUBLISHED
-            </span>
-          </div>
-
-          <h2 id="article-title">
-            Publication title
-          </h2>
-
-          <div class="article-meta">
-
-            <span id="article-date">
-              DATE
-            </span>
-
-            <span class="meta-separator" aria-hidden="true">
-              /
-            </span>
-
-            <span id="reading-time">
-              Reading time
-            </span>
-
-          </div>
-
-        </header>
-
-
-        <!-- ARTICLE LAYOUT -->
-        <div class="article-layout">
-
-          <!-- AUTOMATIC TABLE OF CONTENTS -->
-          <aside
-            class="article-toc"
-            id="article-toc"
-            aria-label="Article navigation"
-            hidden
-          >
-
-            <p class="eyebrow">
-              ON THIS PAGE
-            </p>
-
-            <nav
-              id="toc-links"
-              aria-label="Table of contents"
-            >
-              <!-- Generated from Markdown headings by JavaScript -->
-            </nav>
-
-          </aside>
-
-
-          <!-- MARKDOWN RENDER TARGET -->
-          <div
-            id="article-content"
-            class="prose"
-            tabindex="-1"
-          >
-            <!-- Markdown content is inserted here by app.js -->
-          </div>
-
+      <article class="reader" id="reader">
+        <div class="reader-empty" id="reader-empty">
+          <div class="empty-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M7 5h12v12"/></svg></div>
+          <p class="eyebrow">YOUR READING SPACE</p>
+          <h2>Ideas deserve<br><em>room to unfold.</em></h2>
+          <p class="empty-copy">Choose a publication to open the reader.</p>
+          <div class="empty-decoration" aria-hidden="true"><span></span><span></span><span></span></div>
         </div>
 
-
-        <!-- ARTICLE FOOTER -->
-        <footer class="article-footer">
-
-          <div class="article-license">
-
-            <div
-              class="cc-icons"
-              aria-label="Creative Commons"
-            >
-              <span aria-hidden="true">CC</span>
-              <span aria-hidden="true">BY</span>
+        <div id="article-view" hidden>
+          <div class="reader-toolbar">
+            <button class="back-button" id="back-to-archive" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12"/></svg>
+              <span>Archive</span>
+            </button>
+            <div class="reader-actions">
+              <button class="icon-button" id="copy-link-button" type="button" aria-label="Copy article link" title="Copy article link">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 2.9l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21.1l1.7-1.7"/></svg>
+              </button>
+              <a class="icon-button" id="source-link" href="#" target="_blank" rel="noopener noreferrer" aria-label="Open source on GitHub" title="Source on GitHub">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7M21 3 11 13"/><path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/></svg>
+              </a>
+              <a class="icon-button" id="raw-link" href="#" target="_blank" rel="noopener noreferrer" aria-label="Open raw Markdown" title="Raw Markdown">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 14v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6"/></svg>
+              </a>
             </div>
-
-            <div>
-              <strong>OPEN KNOWLEDGE</strong>
-
-              <p>
-                Respect the original author and the license
-                specified by the publication.
-              </p>
-            </div>
-
           </div>
 
-          <a
-            id="back-to-top"
-            class="text-link"
-            href="#reader"
-          >
-            Back to top ↑
-          </a>
+          <header class="article-heading">
+            <div class="article-category-row">
+              <span class="article-category-icon" id="article-category-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 20 9-9-8-8H5L3 11z"/><path d="M7.5 7.5h.01"/></svg></span>
+              <div>
+                <p class="eyebrow" id="article-category">PUBLICATION</p>
+                <span class="article-status"><span class="live-dot"></span> PUBLISHED</span>
+              </div>
+            </div>
+            <h2 id="article-title">Publication title</h2>
+            <div class="article-meta">
+              <span class="meta-item"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span id="article-date">DATE</span></span>
+              <span class="meta-dot">•</span>
+              <span class="meta-item"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="reading-time">Reading time</span></span>
+            </div>
+          </header>
 
-        </footer>
-
-      </div>
-
-    </article>
-
-  </main>
-
-
-  <!-- KEYBOARD SHORTCUT HINT -->
-  <div class="keyboard-hint" aria-hidden="true">
-    <span>PRESS</span>
-    <kbd>/</kbd>
-    <span>TO SEARCH</span>
-  </div>
-
+          <div class="article-layout">
+            <aside class="article-toc" id="article-toc" hidden>
+              <p class="eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h13"/></svg> ON THIS PAGE</p>
+              <nav id="toc-links" aria-label="Table of contents"></nav>
+            </aside>
+            <div id="article-content" class="prose" tabindex="-1"></div>
+          </div>
+</div>
+      </article>
+    </section>
+</main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
